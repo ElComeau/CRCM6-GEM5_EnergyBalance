@@ -30,7 +30,7 @@ def Compare_min_data_percentage(dates_arrays_list, data_arrays_list, labels_list
 
     Created       : June 15th 2021
 
-    Last modified : July 28th 2021 
+    Last modified : August 3rd 2021 
 
     """
 
@@ -57,6 +57,7 @@ def Compare_min_data_percentage(dates_arrays_list, data_arrays_list, labels_list
     fig_size_height = 6
 
     qtty_of_data    = 24
+    marker_types    = ['x', '^', 'o', 's', 'd', '*']
     alpha_value     = 0.7
 
     datetime_format  = '%H:%M %d/%m/%y'
@@ -79,16 +80,15 @@ def Compare_min_data_percentage(dates_arrays_list, data_arrays_list, labels_list
    
         if ( counter == 0 ) :
 
-            nbr_of_dots = qtty_of_data * 6
-            marker_type = '^'
+            nbr_of_dots = qtty_of_data * 6 - 6
             line_style  = 'None'
 
         else :
 
             nbr_of_dots = qtty_of_data
-            marker_type = 'o'
             line_style  = 'solid'
 
+        marker_type = marker_types[counter]
         plt.plot(datetime_array[0:nbr_of_dots], data_array[0:nbr_of_dots], label=labels_list[counter], marker=marker_type, linestyle=line_style, alpha=alpha_value)
         counter = counter + 1
 
