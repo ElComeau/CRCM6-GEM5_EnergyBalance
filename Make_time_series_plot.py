@@ -1,141 +1,104 @@
 import fluxnet_classes as fc
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
+import locale
+import Epoch_to_datetime as etd
 import pdb
 
 
-def Compare_min_data_percentage(data_short_period, dates_short_period, t_freq_short, t_freq_long, central_time, min_data_percentages, time_length, var_name, var_index, station_id) :
+def Compare_min_data_percentage(dates_arrays_list, data_arrays_list, labels_list, var_name, filepath) :
 
     """
-
-    Creates a plot showing the values of different sets of data according to their respective dates, temporal frequency and minimum data percentage for a single station.
+    Creates a plot showing the values of different sets of data according to their respective dates.
 
 
     Parameters :
 
-        data_short_period (array)    : Data used for the plot. Since the data will be averaged over a longer period, enter the data with the shortest averaging period that will be presented in the plot.
+        dates_arrays_list (list) : List of date arrays associated with data.
 
-        dates_short_period (array)   : Dates associated with data.
+        data_arrays_list (list)  : List of data arrays to plot.
 
-        t_freq_short (int)           : Temporal frequency of data in hours.
+        labels_list (list)       : List of labels to use for the plot. Each label is associated with a data array.  
 
-        t_freq_long (int)            : Temporal frequency of the data averaged over the longer period in hours.
+        var_name (string)        : Name of the variable to be plotted (eg. 'G').
 
-        central_time (float)         : Time about which the temporal mean will be calculated, expressed in hours ranging from 0 to 24 (0 inclusive, 24 exclusive). For example, if 
-                                       t_freq_long = 10800 (ie, 3 hours) and we would like to divide a day starting at midnight (00:00 to 03:00, 03:00 to 06:00, etc.), we could
-                                       enter 1.5 (the center between 00:00 and 03:00) or 4.5, among other values. 
-
-        min_data_percentages (array) : Minimum data percentage(s) that will be presented in the plot.
-
-        time_length (float)          : Amount of time to be presented in the plot in hours.
-
-        var_name (string)            : Name of the variable to be plotted (eg. 'G').
-
-        var_index (int)              : Index of the variable to be plotted (ie, the index of the column corresponding to the variable to be plotted). 
-
-        station_id (string)          : Identification of the station whose data will be plotted. This can include the station number, station name, etc. 
-
+        filepath (string)        : Filepath used to save the plot.
 
 
     Author        : Élise Comeau
 
     Created       : June 15th 2021
 
-    Last modified : June 18th 2021 
+    Last modified : July 28th 2021 
 
     """
 
 
-    # Step 1 : Obtain dates to plot
 
-    initial_date = dates_short_period[0]
-    final_date   = initial_date + time_length * 3600   # 3600 to convert hours to seconds
-    time_step    = t_freq_short * 3600
+    # Step 1 : Convert dates to datetime format
 
-    ref_times = np.arange(initial_date, final_date, time_step)
-    last_row  = ref_times.shape[0]                             # last row that will be plotted in data
+    datetime_arrays_list = []
 
-#    pdb.set_trace()
+    for dates_array in dates_arrays_list :
 
+        datetime_list  = etd.epoch_to_datetime(dates_array, fc.constants.reference_date)
+        datetime_array = np.asarray(datetime_list)
 
-    # Step 2 : Generate data and dates for the long period(s)
-
-    data_list  = [ data_short_period ]
-    dates_list = [ dates_short_period ]
-
-    legend      = str(t_freq_short) + ' hr avg' 
-    legend_list = [ legend ] 
-
-    for min_data_percentage in min_data_percentages :
-
-        data_long_period, dates_long_period = fc.Temporal_mean(data_short_period, dates_short_period, t_freq_short * 3600, t_freq_long * 3600, central_time, min_data_percentage)
-
-        data_list.append(data_long_period)
-        dates_list.append(dates_long_period)
-
-        legend = str(t_freq_long) + ' hr avg (min. data percentage = ' + str(min_data_percentage) + '%)'
-        legend_list.append(legend)
-
-#        pdb.set_trace()
-
-#    pdb.set_trace()
+        datetime_arrays_list.append(datetime_array)
+        #pdb.set_trace()
 
 
-    # Step 3 : Add missing values
+    # Step 2 : Initialize plot paramaters
 
-#    index = 0
+    counter         = 0
 
-    for data, dates in zip(data_list, dates_list) :
+    fig_size_width  = 22
+    fig_size_height = 6
 
-        for time in ref_times :
+    qtty_of_data    = 24
+    alpha_value     = 0.7
 
-            if ( time not in dates ) :
-
-#                print( str(time) + ' not found.')
-
-                insert_index = np.amin(np.where(dates > time))
-                dates        = np.insert(dates, insert_index, time)
-                data         = np.insert(data, insert_index, fc.constants.missing_value, axis=0)
-
-                pdb.set_trace()
-
-#                if ( index != 0 ) :
-#                    pdb.set_trace()
-
-#            else :
-
-#                print ( str(time) + ' found.') 
-
-        data = np.ma.masked_where(data == fc.constants.missing_value, data)
-
-
-        # Step 4 : Add data, dates to plot
-
-        plt.plot(dates[:last_row], data[:last_row, var_index], linestyle=None, marker='o')
-#        plt.plot(dates[:last_row], data[:last_row, var_index], linestyle=None, marker='+')
-#            pdb.set_trace()
-
-#        index = index + 1
-
-#        pdb.set_trace()	
-
-
-    # Step 5 : Add labels to plot
+    datetime_format  = '%H:%M %d/%m/%y'
+    loc              = 'en_CA'
 
     var_unit = fc.variables.units[var_name]
-
-    title = 'Value of ' + var_name + ' according to time, averaging period and minimum data percentage (station = ' + station_id + ')'
-    x_label = 'Time (s)'
-    y_label = 'Value of ' + var_name + ' (' + var_unit + ')' 
-
-    plt.title(title, fontsize=14, fontweight='bold')
-    plt.xlabel(x_label, fontsize=12, fontweight='bold')
-    plt.ylabel(y_label, fontsize=12, fontweight='bold') 
-    plt.legend(legend_list)
-
-    pdb.set_trace()
-    plt.show()
- 
+    x_label  = 'Local Time [hh:mm dd/mm/yy]'
+    y_label  = 'Value of ' + var_name + ' [' + var_unit + ']'
 
 
-# End of function definition
+    # Step 3 : Add dates and data to plot
+
+    fig = plt.figure(figsize=(fig_size_width, fig_size_height))
+    ax  = fig.add_subplot(1,1,1)
+
+    locale.setlocale(locale.LC_TIME, loc)
+    ax.xaxis.set_major_formatter(mdates.DateFormatter(datetime_format))
+
+    for datetime_array, data_array in zip(datetime_arrays_list, data_arrays_list) :
+   
+        if ( counter == 0 ) :
+
+            nbr_of_dots = qtty_of_data * 6
+            marker_type = '^'
+            line_style  = 'None'
+
+        else :
+
+            nbr_of_dots = qtty_of_data
+            marker_type = 'o'
+            line_style  = 'solid'
+
+        plt.plot(datetime_array[0:nbr_of_dots], data_array[0:nbr_of_dots], label=labels_list[counter], marker=marker_type, linestyle=line_style, alpha=alpha_value)
+        counter = counter + 1
+
+
+    # Step 4 : Add identifiers to plot
+
+    plt.xlabel(x_label, fontweight='bold')
+    plt.ylabel(y_label, fontweight='bold')
+
+    plt.legend()
+
+    plt.savefig(filepath, bbox_inches="tight")
+    #pdb.set_trace()
