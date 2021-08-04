@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def Calculate_stats(stats_names, data, weights) :
+def Calculate_stats(stats_names, data) :
 
     """
 
@@ -14,8 +14,6 @@ def Calculate_stats(stats_names, data, weights) :
     
         data (array)       : Data with which the descriptive statistics will be calculated. Each column represents a single variable.
         
-        weights (array)    : Weights associated with the data.
-    
 
     Returns :
     
@@ -26,7 +24,7 @@ def Calculate_stats(stats_names, data, weights) :
 
     Created       : June 3rd, 2021
 
-    Last modified : June 14th, 2021
+    Last modified : August 2nd, 2021
 
 
     """
@@ -40,11 +38,15 @@ def Calculate_stats(stats_names, data, weights) :
 
         if ( stat_name == 'MEAN' ) :
 
-            stats_values_list.append(np.average(data, axis=0, weights=weights))
+            stats_values_list.append(np.mean(data, axis=0))
 
         elif ( stat_name == 'STANDARD_DEVIATION' ) :
 
             stats_values_list.append(np.std(data, axis=0))
+
+        elif ( stat_name == 'MEDIAN' ) :
+
+            stats_values_list.append(np.median(data, axis=0))
 
 
     # Step 2 : Return the values of the descriptive statistic(s) 
