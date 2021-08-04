@@ -2,6 +2,7 @@ import os
 import glob
 import fluxnet_classes as fc
 import numpy as np
+import datetime
 import Make_comparison_plots_v4 as mcp
 import pdb
 
@@ -26,9 +27,13 @@ DELIMITER_FILTERED_DATA          = ' '
 NEW_LINE_CHAR                    = '\n'
 NULL_CHAR                        = ''
 
-UNFILTERED_DATA_DIRECTORY          = '/home/data/Validation/AmeriFlux'
+UNFILTERED_DATA_DIRECTORY_R        = '/home/data/Validation/AmeriFlux'
 NBR_OF_HEADER_ROWS_UNFILTERED_DATA = 3
-UNFILTERED_DATA_SUMMARY_DIRECTORY  = '/snow/comeau/FLUXNET_America/AMF_1990-2019'
+UNFILTERED_DATA_DIRECTORY_W        = '/snow/comeau/FLUXNET_America/AMF_1990-2019'
+
+UNFILTERED_DATA_FILENAME_1 = 'AMF_data_'
+UNFILTERED_DATA_FILENAME_2 = '_1990-2021_'
+UNFILTERED_DATA_FILENAME_3 = '_0-5.npy'
 
 Y_AXIS_LABEL            = 'Nbr of years available'
 LABEL_PRE_PROCESSING    = 'AMF -  30 mins'
@@ -74,7 +79,7 @@ for sampling_percentage in SAMPLING_PERCENTAGES :
 
         # Step 1.2 : Obtain variable names
 
-        unfiltered_data_summary_pathname = UNFILTERED_DATA_SUMMARY_DIRECTORY + '/' + FILTERED_DATA_FILENAME
+        unfiltered_data_summary_pathname = UNFILTERED_DATA_DIRECTORY_W + '/' + FILTERED_DATA_FILENAME
 
         var_names      = FILTERED_DATA_FILENAME.split('_', 3)[3].replace('.txt', NULL_CHAR)
         var_names_list = var_names.split('-')
@@ -105,6 +110,7 @@ for sampling_percentage in SAMPLING_PERCENTAGES :
         #pdb.set_trace()
 
 
+
         # Step 1.4 : Obtain number of years available for unfiltered data
 
         # Step 1.4.1 : Obtain summary function parameters
@@ -113,35 +119,77 @@ for sampling_percentage in SAMPLING_PERCENTAGES :
 
         for station_id in station_ids_list :
 
-            unfiltered_data_pathname_pattern = UNFILTERED_DATA_DIRECTORY + '/' + 'AMF_' + station_id + '*' + '.csv'
+            unfiltered_data_pathname_pattern = UNFILTERED_DATA_DIRECTORY_R + '/' + 'AMF_' + station_id + '*' + '.csv'
             unfiltered_data_pathname         = glob.glob(unfiltered_data_pathname_pattern)[0]
             file_unfiltered_data             = open(unfiltered_data_pathname, 'r')
 
             for line_nbr in range(0, NBR_OF_HEADER_ROWS_UNFILTERED_DATA - 1) :
                 file_unfiltered_data.readline()
 
-            var_names_unfiltered_data = file_unfiltered_data.readline().split(',')
+            var_names_unfiltered_data                                       = file_unfiltered_data.readline().split(',')
+            var_names_unfiltered_data[ len(var_names_unfiltered_data) - 1 ] = var_names_unfiltered_data[ len(var_names_unfiltered_data) - 1].replace(NEW_LINE_CHAR, NULL_CHAR)
             #pdb.set_trace()
 
-            unfiltered_data_list = []
+            unfiltered_data_list  = []
+            unfiltered_dates_list = []
 
             for line_unfiltered_data in file_unfiltered_data :
-                unfiltered_data_list.append(line_unfiltered_data)
-                #pdb.set_trace()
+
+                unfiltered_data_line_list = []
+
+                for var_name in var_names_list :
+
+       	       	    var_index = var_names_unfiltered_data.index(var_name)
+                    var_value = line_unfiltered_data.split(',')[var_index].replace(NEW_LINE_CHAR, NULL_CHAR)
+
+                    if ( var_value == '-9999' ) :  # if at least one value is missing ...
+                        break                      # ... then the entire line is not worth keeping 
+
+                    else :
+                        unfiltered_data_line_list.append(float(var_value))
+
+                if ( len(unfiltered_data_line_list) == len(var_names_list) ) :  # so as to not append an incomplete list
+                    
+                    unfiltered_data_list.append(unfiltered_data_line_list)
+
+                    unfiltered_date_string               = line_unfiltered_data.split(',')[0]
+                    unfiltered_date_datetime             = datetime.datetime.strptime(unfiltered_date_string, '%Y%m%d%H%M')
+                    unfiltered_central_date_datetime     = unfiltered_date_datetime + datetime.timedelta(minutes=15)
+                    unfiltered_central_date_elapsed_time = (unfiltered_central_date_datetime - fc.constants.reference_date).total_seconds() 
+
+                    unfiltered_dates_list.append(unfiltered_central_date_elapsed_time)
+                    #pdb.set_trace()
 
             total_unfiltered_data_list.append(len(unfiltered_data_list))
-            #pdb.set_trace()
+
+
+            # Step 1.4.2 : Save unfiltered data and dates
+
+            unfiltered_data_array  = np.asarray(unfiltered_data_list)
+
+            unfiltered_data_filename = UNFILTERED_DATA_FILENAME_1 + str(station_nbr) + '_' + station_id + UNFILTERED_DATA_FILENAME_2 + var_names + UNFILTERED_DATA_FILENAME_3
+            unfiltered_data_pathname = UNFILTERED_DATA_DIRECTORY_W + '/npy/' + unfiltered_data_filename
+
+            np.save(unfiltered_data_pathname, unfiltered_data_array)
+
+            unfiltered_dates_array = np.asarray(unfiltered_dates_list)
+
+            unfiltered_dates_pathname = unfiltered_data_pathname.replace('data', 'dates')
+
+            np.save(unfiltered_dates_pathname, unfiltered_dates_array)            
+
+            pdb.set_trace()
     
         t_freq = [0.5] * len(total_unfiltered_data_list)
 
 
-        # Step 1.4.2 : Create summary file for unfiltered data
+        # Step 1.4.3 : Create summary file for unfiltered data
 
         fc.print_summary(total_unfiltered_data_list, unfiltered_data_summary_pathname, t_freq, var_names) 
         #pdb.set_trace()
 
 
-        # Step 1.4.3 : Read summary file for unfiltered data
+        # Step 1.4.4 : Read summary file for unfiltered data
 
         unfiltered_data_pathname = unfiltered_data_summary_pathname
         file_unfiltered_data     = open(unfiltered_data_pathname, 'r')
@@ -173,7 +221,7 @@ for sampling_percentage in SAMPLING_PERCENTAGES :
         data_2                = np.array(nbr_of_yrs_filtered_data_list)
 
         plot_filename = 'nbr-of-years-of-data_' + FILTERED_DATA_SAMPLING_PERCENTAGES_DIRECTORY + sampling_percentage + '_' + FILTERED_DATA_MIN_NBR_YRS_DIRECTORY + min_nbr_yrs + '.png'
-        plot_pathname = UNFILTERED_DATA_SUMMARY_DIRECTORY + '/' + 'png' + '/' + plot_filename
+        plot_pathname = UNFILTERED_DATA_DIRECTORY_W + '/png/' + plot_filename
 
         mcp.Make_comparison_plot(station_numbers, station_names, data_1, data_2, Y_AXIS_LABEL, LABEL_PRE_PROCESSING, label_post_processing, CAPTION, plot_pathname)
         #pdb.set_trace()
