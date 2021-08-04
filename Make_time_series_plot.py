@@ -41,7 +41,7 @@ def Compare_min_data_percentage(data_short_period, dates_short_period, t_freq_sh
 
     Created       : June 15th 2021
 
-    Last modified : June 17th 2021 
+    Last modified : June 18th 2021 
 
     """
 
@@ -97,6 +97,8 @@ def Compare_min_data_percentage(data_short_period, dates_short_period, t_freq_sh
                 dates        = np.insert(dates, insert_index, time)
                 data         = np.insert(data, insert_index, fc.constants.missing_value, axis=0)
 
+                pdb.set_trace()
+
 #                if ( index != 0 ) :
 #                    pdb.set_trace()
 
@@ -109,7 +111,8 @@ def Compare_min_data_percentage(data_short_period, dates_short_period, t_freq_sh
 
         # Step 4 : Add data, dates to plot
 
-        plt.plot(dates[:last_row], data[:last_row, var_index], linestyle=None, marker='+')
+        plt.plot(dates[:last_row], data[:last_row, var_index], linestyle=None, marker='o')
+#        plt.plot(dates[:last_row], data[:last_row, var_index], linestyle=None, marker='+')
 #            pdb.set_trace()
 
 #        index = index + 1
@@ -130,7 +133,7 @@ def Compare_min_data_percentage(data_short_period, dates_short_period, t_freq_sh
     plt.ylabel(y_label, fontsize=12, fontweight='bold') 
     plt.legend(legend_list)
 
-#    pdb.set_trace()
+    pdb.set_trace()
     plt.show()
  
 
