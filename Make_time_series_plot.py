@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import pdb
 
 
-def Compare_min_data_percentage(data_short_period, dates_short_period, t_freq_short, t_freq_long, min_data_percentages, time_length, var_name, var_index, station_id) :
+def Compare_min_data_percentage(data_short_period, dates_short_period, t_freq_short, t_freq_long, central_time, min_data_percentages, time_length, var_name, var_index, station_id) :
 
     """
 
@@ -19,7 +19,11 @@ def Compare_min_data_percentage(data_short_period, dates_short_period, t_freq_sh
 
         t_freq_short (int)           : Temporal frequency of data in hours.
 
-        t_freq_long (int)            : Temporal frequency of the data averaged over the longer period in hours. 
+        t_freq_long (int)            : Temporal frequency of the data averaged over the longer period in hours.
+
+        central_time (float)         : Time about which the temporal mean will be calculated, expressed in hours ranging from 0 to 24 (0 inclusive, 24 exclusive). For example, if 
+                                       t_freq_long = 10800 (ie, 3 hours) and we would like to divide a day starting at midnight (00:00 to 03:00, 03:00 to 06:00, etc.), we could
+                                       enter 1.5 (the center between 00:00 and 03:00) or 4.5, among other values. 
 
         min_data_percentages (array) : Minimum data percentage(s) that will be presented in the plot.
 
@@ -64,7 +68,7 @@ def Compare_min_data_percentage(data_short_period, dates_short_period, t_freq_sh
 
     for min_data_percentage in min_data_percentages :
 
-        data_long_period, dates_long_period = fc.Temporal_mean(data_short_period, dates_short_period, t_freq_short * 3600, t_freq_long * 3600, min_data_percentage)
+        data_long_period, dates_long_period = fc.Temporal_mean(data_short_period, dates_short_period, t_freq_short * 3600, t_freq_long * 3600, central_time, min_data_percentage)
 
         data_list.append(data_long_period)
         dates_list.append(dates_long_period)
