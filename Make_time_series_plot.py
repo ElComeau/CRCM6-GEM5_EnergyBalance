@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import locale
 import Epoch_to_datetime as etd
+import Get_datetime_index as gdi
 import pdb
 
 
@@ -30,7 +31,7 @@ def Compare_min_data_percentage(dates_arrays_list, data_arrays_list, labels_list
 
     Created       : June 15th 2021
 
-    Last modified : August 3rd 2021 
+    Last modified : August 4th 2021 
 
     """
 
@@ -80,16 +81,23 @@ def Compare_min_data_percentage(dates_arrays_list, data_arrays_list, labels_list
    
         if ( counter == 0 ) :
 
-            nbr_of_dots = qtty_of_data * 6 - 6
-            line_style  = 'None'
+            start_datetime_index = 0
+            end_datetime_index   = 144
+
+            specific_start_datetime = datetime_array[start_datetime_index]
+            specific_end_datetime   = datetime_array[end_datetime_index] 
+
+            line_style = 'None'
 
         else :
 
-            nbr_of_dots = qtty_of_data
+            start_datetime_index = gdi.Get_datetime_index(datetime_array, specific_start_datetime)
+            end_datetime_index   = gdi.Get_datetime_index(datetime_array, specific_end_datetime) + 1
+
             line_style  = 'solid'
 
         marker_type = marker_types[counter]
-        plt.plot(datetime_array[0:nbr_of_dots], data_array[0:nbr_of_dots], label=labels_list[counter], marker=marker_type, linestyle=line_style, alpha=alpha_value)
+        plt.plot(datetime_array[start_datetime_index:end_datetime_index], data_array[start_datetime_index:end_datetime_index], label=labels_list[counter], marker=marker_type, linestyle=line_style, alpha=alpha_value)
         counter = counter + 1
 
 
@@ -101,4 +109,3 @@ def Compare_min_data_percentage(dates_arrays_list, data_arrays_list, labels_list
     plt.legend()
 
     plt.savefig(filepath, bbox_inches="tight")
-    #pdb.set_trace()
