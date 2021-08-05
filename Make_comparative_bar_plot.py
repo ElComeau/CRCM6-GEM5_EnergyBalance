@@ -1,9 +1,10 @@
 import sys
+import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.ticker as tck
 
 
-def Make_comparison_plot(station_numbers, station_names, data_1, data_2, plot_title, y_axis_label, legend_label_1, legend_label_2) :
+def Make_comparison_plot(station_numbers, station_names, data_1, data_2, plot_title, y_axis_label, legend_label_1, legend_label_2, filepath) :
   
     """
       
@@ -30,12 +31,14 @@ def Make_comparison_plot(station_numbers, station_names, data_1, data_2, plot_ti
           
         label_2 (string)        : Label used in legend of barplot for data_2.          
 
+        filename (string)       : Path of file where plot is saved.
+
 
     Author        : Élise Comeau
 
     Created       : June 3rd, 2021
 
-    Last modified : June 14th, 2021
+    Last modified : July 19th, 2021
 
     """
 
@@ -119,6 +122,7 @@ def Make_comparison_plot(station_numbers, station_names, data_1, data_2, plot_ti
         ax[1].set_axisbelow(True)
 
         fig.tight_layout()
+        plt.savefig(filepath)
 
 
 # End of function definition
