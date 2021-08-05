@@ -42,7 +42,7 @@ def Temporal_mean(data_short_period, dates_short_period, t_freq_short, t_freq_lo
 
     Created       : June 3rd, 2021
 
-    Last modified : June 17th, 2021
+    Last modified : August 3rd, 2021
 
 
     """
@@ -85,7 +85,7 @@ def Temporal_mean(data_short_period, dates_short_period, t_freq_short, t_freq_lo
         # converting the central time to the same format as dates in dates_short_period
 
         first_time     = dates_short_period[0]
-        first_datetime = fc.constants.reference_date + timedelta(seconds=first_time) # the dates represent time deltas, in seconds, since reference_date (ie., January 1st 1971)
+        first_datetime = fc.constants.reference_date + timedelta(seconds=int(first_time)) # the dates represent time deltas, in seconds, since reference_date (ie., January 1st 1971)
 
         if ( ( central_time - 0.5 * ( t_freq_long / 3600 ) ) >= 0 ) :
             cutoff = central_time - 0.5 * ( t_freq_long / 3600 )      # cutoff represents the transition between two consecutive periods; eg. : the cutoff between 00:00 - 03:00 and 03:00 - 06:00 is 03:00
@@ -96,7 +96,7 @@ def Temporal_mean(data_short_period, dates_short_period, t_freq_short, t_freq_lo
         cutoff_hour   = int(cutoff)
         cutoff_minute = int((cutoff - cutoff_hour) * 60)
 
-#        pdb.set_trace()
+        #pdb.set_trace()
 
         initial_datetime = datetime.datetime(first_datetime.year, first_datetime.month, first_datetime.day, cutoff_hour, cutoff_minute)
         initial_time     = (initial_datetime - fc.constants.reference_date).total_seconds()                                                 # time at which the calculations might begin
@@ -118,7 +118,7 @@ def Temporal_mean(data_short_period, dates_short_period, t_freq_short, t_freq_lo
             initial_time = initial_time + t_freq_long
             elapsed_time = first_time - initial_time
 
-#        pdb.set_trace() 
+        #pdb.set_trace() 
   
 
         # Step 3 : Calculate the mean over the longer time period.
@@ -129,6 +129,7 @@ def Temporal_mean(data_short_period, dates_short_period, t_freq_short, t_freq_lo
         initial_row        = 0                           # row at whihch temporal averaging begins        
         data_per_period    = t_freq_long / t_freq_short  # quantity of data per period, provided all the data is present
         offset             = 0                           # necessary to include the correct amount of rows in the mean calculation 
+        #pdb.set_trace()
 
         for row in range(total_rows) :
 
@@ -147,8 +148,8 @@ def Temporal_mean(data_short_period, dates_short_period, t_freq_short, t_freq_lo
                     contiguous_data.append(np.mean(data_short_period[initial_row:row+offset,:], axis=0))   # data corresponds to the average of each variable (ie, column) for each entry per long temporal frequency
                     contiguous_dates.append(initial_time + t_freq_long / 2)                                # dates correspond to the middle of the period
 
-                    initial_time += int(time_difference / t_freq_long) * t_freq_long   # we must find how many t_freq_long have passed since the last initial_time to find the new one
-                    initial_row   = row
+                initial_time += int(time_difference / t_freq_long) * t_freq_long   # we must find how many t_freq_long have passed since the last initial_time to find the new one
+                initial_row   = row
 
         if ( offset == 0 ) :    # if the last row of data_short_period was excluded from the last period
 
