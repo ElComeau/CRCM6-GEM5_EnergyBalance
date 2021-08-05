@@ -1,7 +1,7 @@
 import os
 import glob
 import numpy as np
-import Compare_min_data_percentage_v6 as cmdp
+import Compare_min_data_percentage_v7 as cmdp
 import sys
 import pdb
 
@@ -11,12 +11,12 @@ import pdb
 
 # Step 0.1 : Define directories
 
-MIN_NBR_YRS_DIRECTORY         = '/num-years'
+MIN_NBR_YRS_DIRECTORY         = '/num-years1'
 NUMPY_DIRECTORY               = '/npy'
 PNG_DIRECTORY                 = '/png'
 SAMPLING_PERCENTAGE_DIRECTORY = '/sampling-percentage'
 SNOW_COMEAU_DIRECTORY         = '/snow/comeau/FLUXNET_America/AMF_1990-2017'
-SNOW_DILUCA_DIRECTORY         = '/snow/diluca/FLUXNET_America/1990-2017/v1/TA-SW_IN-SW_OUT-LW_IN-LW_OUT-H-LE'
+SNOW_DILUCA_DIRECTORY         = '/snow/diluca/FLUXNET_America/1990-2017/v2/TA-SW_IN-SW_OUT-LW_IN-LW_OUT-H-LE'
 
 
 # Step 0.2 : Define filenames
@@ -58,17 +58,16 @@ VAR_NAMES_INDEX   = 3
 
 DATA_ID              = 'data'
 DATES_ID             = 'dates'
-MIN_NBR_YRS          = ['1', '2', '5']     # minimum number of years of available data
-SAMPLING_PERCENTAGES = ['25', '50', '75']  # minimum sampling percentages
-MIN_NBR_DATA         = ['2', '4', '5']
+SAMPLING_PERCENTAGES = ['10', '25', '50', '75', '90']  # minimum sampling percentages
+MIN_NBR_DATA         = ['1', '2', '4', '5', '6']
+STATION_TO_SKIP      = 'US-Ro1'                        # station is only present when sampling percentage is 90%, rendering comparisons impossible
 
 
 # Step 0.8 : Define plot constants
 
 VALUES_0_5_HR_LABEL = 'AMF -  30 mins'
 VALUES_3_HR_LABEL_1 = 'AMF - 180 mins ('
-VALUES_3_HR_LABEL_2 = ' yr(s), '
-VALUES_3_HR_LABEL_3 = '/6+ data)'
+VALUES_3_HR_LABEL_2 = '/6+ data)'
 
 VALUES_CAPTION_1 = '''Average value of '''
 VALUES_CAPTION_2 = ''' for station '''
@@ -91,22 +90,55 @@ var_names_list = var_names.split(VAR_NAMES_DELIMITER)
 
 # Step 2 : Obtain station numbers and ids
 
-station_names_file_pathname = SNOW_COMEAU_DIRECTORY + SLASH_BAR + STATION_NAMES_FILENAME
+#station_names_file_pathname = SNOW_COMEAU_DIRECTORY + SLASH_BAR + STATION_NAMES_FILENAME
+#station_names_file          = open(station_names_file_pathname, READING_CHAR)
+
+#station_nbrs_list = []
+#station_ids_list  = []
+
+#for station_names_line in station_names_file :
+
+#    amf_filename = os.path.basename(station_names_line)
+#    station_nbr  = amf_filename.split(STATION_NAMES_DELIMITER)[STATION_NBR_INDEX]
+#    station_id   = amf_filename.split(STATION_NAMES_DELIMITER)[STATION_ID_INDEX]
+
+#    station_nbrs_list.append(station_nbr)
+#    station_ids_list.append(station_id)
+
+#station_names_file.close()
+#pdb.set_trace()
+
+######################################################################################################
+
+station_to_skip_nbr = 0  # station number of the station to skip
+
+station_names_file_pathname = SNOW_DILUCA_DIRECTORY + SAMPLING_PERCENTAGE_DIRECTORY + SAMPLING_PERCENTAGES[0] + MIN_NBR_YRS_DIRECTORY + SLASH_BAR + STATION_NAMES_FILENAME
 station_names_file          = open(station_names_file_pathname, READING_CHAR)
 
-station_nbrs_list = []
-station_ids_list  = []
+station_nbrs_list         = []
+station_ids_list          = []
+#dates_3_hr_filepaths_list = []
 
 for station_names_line in station_names_file :
 
-    amf_filename = os.path.basename(station_names_line)
-    station_nbr  = amf_filename.split(STATION_NAMES_DELIMITER)[STATION_NBR_INDEX]
-    station_id   = amf_filename.split(STATION_NAMES_DELIMITER)[STATION_ID_INDEX]
+    amf_filename        = os.path.basename(station_names_line)
+    station_nbr         = amf_filename.split(STATION_NAMES_DELIMITER)[STATION_NBR_INDEX]
+    station_id          = amf_filename.split(STATION_NAMES_DELIMITER)[STATION_ID_INDEX]
+    #dates_3_hr_filepath = station_names_line.replace(NEW_LINE_CHAR, NULL_CHAR).replace(SLASH_BAR+SLASH_BAR, SLASH_BAR).replace(DATA_ID, DATES_ID)
 
-    station_nbrs_list.append(station_nbr)
-    station_ids_list.append(station_id)
+    if ( station_id != STATION_TO_SKIP ) :
+
+        station_ids_list.append(station_id)
+        station_nbrs_list.append(station_nbr)
+        #dates_3_hr_filepaths_list.append(dates_3_hr_filepath)
+
+    else :
+
+        station_to_skip_nbr = int(station_nbr)
 
 station_names_file.close()
+#station_ids_list.sort()
+#station_ids_all_sampling_percentages.append(station_ids_list)
 #pdb.set_trace()
 
 
@@ -140,29 +172,27 @@ for station_id, station_nbr in zip(station_ids_list, station_nbrs_list) :
 
     for sampling_percentage in SAMPLING_PERCENTAGES :
 
-        for min_nbr_yrs in MIN_NBR_YRS :
+        dates_3_hr_filepath_pattern = SNOW_DILUCA_DIRECTORY + SAMPLING_PERCENTAGE_DIRECTORY + sampling_percentage + MIN_NBR_YRS_DIRECTORY + NUMPY_DIRECTORY + SLASH_BAR + AMF_PREFIX + DATES_ID + STAR + station_id + STAR
+        #pdb.set_trace()
 
-            dates_3_hr_filepath_pattern = SNOW_DILUCA_DIRECTORY + SAMPLING_PERCENTAGE_DIRECTORY + sampling_percentage + MIN_NBR_YRS_DIRECTORY  + min_nbr_yrs + NUMPY_DIRECTORY + SLASH_BAR + AMF_PREFIX + DATES_ID + STAR + station_id + STAR
+        dates_3_hr_files = glob.glob(dates_3_hr_filepath_pattern)
+
+        if ( dates_3_hr_files ) :
+
+            dates_3_hr_filepath = glob.glob(dates_3_hr_filepath_pattern)[FILEPATH_INDEX]
+            dates_3_hr          = np.load(dates_3_hr_filepath)
+
+            data_3_hr_filepath_pattern = dates_3_hr_filepath_pattern.replace(DATES_ID, DATA_ID)
+            data_3_hr_filepath         = glob.glob(data_3_hr_filepath_pattern)[FILEPATH_INDEX]
+            data_3_hr                  = np.load(data_3_hr_filepath)
+
+            min_nbr_data      = MIN_NBR_DATA[SAMPLING_PERCENTAGES.index(sampling_percentage)]
+            values_3_hr_label = VALUES_3_HR_LABEL_1 + min_nbr_data + VALUES_3_HR_LABEL_2
+
+            station_dates_list.append(dates_3_hr)
+            station_data_list.append(data_3_hr)
+            labels_list.append(values_3_hr_label)
             #pdb.set_trace()
-
-            dates_3_hr_files = glob.glob(dates_3_hr_filepath_pattern)
-
-            if ( dates_3_hr_files ) :
-
-                dates_3_hr_filepath         = glob.glob(dates_3_hr_filepath_pattern)[FILEPATH_INDEX]
-                dates_3_hr                  = np.load(dates_3_hr_filepath)
-
-                data_3_hr_filepath_pattern = dates_3_hr_filepath_pattern.replace(DATES_ID, DATA_ID)
-                data_3_hr_filepath         = glob.glob(data_3_hr_filepath_pattern)[FILEPATH_INDEX]
-                data_3_hr                  = np.load(data_3_hr_filepath)
-
-                min_nbr_data      = MIN_NBR_DATA[SAMPLING_PERCENTAGES.index(sampling_percentage)]
-                values_3_hr_label = VALUES_3_HR_LABEL_1 + min_nbr_yrs + VALUES_3_HR_LABEL_2 + min_nbr_data + VALUES_3_HR_LABEL_3
-
-                station_dates_list.append(dates_3_hr)
-                station_data_list.append(data_3_hr)
-                labels_list.append(values_3_hr_label)
-                #pdb.set_trace()
 
 
     # Step 4 : Create plots
@@ -185,9 +215,7 @@ for station_id, station_nbr in zip(station_ids_list, station_nbrs_list) :
         #pdb.set_trace()
         #var_data_array = station_data_array[:,var_index] 
 
-        #plot_caption = VALUES_CAPTION_1 + var_name + VALUES_CAPTION_2 + station_nbr + DASH + station_id + VALUES_CAPTION_3
-
-        plot_filename = PLOT_TYPE + STATION_NAMES_DELIMITER + station_nbr + STATION_NAMES_DELIMITER + station_id + STATION_NAMES_DELIMITER + var_name + PNG_SUFFIX
+        plot_filename = PLOT_TYPE + STATION_NAMES_DELIMITER + station_nbr + STATION_NAMES_DELIMITER + station_id + STATION_NAMES_DELIMITER + var_name + STATION_NAMES_DELIMITER + MIN_NBR_YRS_DIRECTORY.replace(SLASH_BAR, NULL_CHAR) + PNG_SUFFIX
         plot_pathname = SNOW_COMEAU_DIRECTORY + PNG_DIRECTORY + SLASH_BAR + plot_filename
 
         cmdp.Compare_min_data_percentage(station_dates_list, station_data_ploting_list, labels_list, var_name, plot_pathname)
