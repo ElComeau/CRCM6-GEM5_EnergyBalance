@@ -17,7 +17,7 @@ This scripts processes AmeriFlux (AMF) data at a 0.5 hour frequency. It removes 
 # Step 0.1 : Define directories
 
 DATA_VALIDATION_DIRECTORY     = '/home/data/Validation/AmeriFlux'
-MIN_NBR_YRS_DIRECTORY         = '/num-years'
+MIN_NBR_YRS_DIRECTORY         = '/num-years1'
 NUMPY_DIRECTORY               = '/npy'
 SAMPLING_PERCENTAGE_DIRECTORY = '/sampling-percentage'
 SNOW_COMEAU_DIRECTORY         = '/snow/comeau/FLUXNET_America/AMF_1990-2017'
@@ -36,7 +36,7 @@ SUMMARY_FILENAME        = 'AMF_summary_1990-2021_TA-SW_IN-SW_OUT-LW_IN-LW_OUT-H-
 # Step 0.3 : Define delimiters
 
 DATES_AND_DATA_0_5_HR_DELIMITER = ','
-STATION_NAMES_DELIMITER         = '_'
+STATION_IDS_DELIMITER           = '_'
 VAR_NAMES_DELIMITER             = '-'
 
 
@@ -74,16 +74,17 @@ DATES_0_5_HR_FORMAT                   = '%Y%m%d%H%M'
 DATES_0_5_HR_HALF_TIME                = 15                  # half of half an hour is 15 minutes
 DATES_AND_DATA_0_5_NBR_OF_HEADER_ROWS = 3
 DATES_ID                              = 'dates'
-MIN_NBR_YRS                           = ['1', '2', '5']     # minimum number of years of available data
+#MIN_NBR_YRS                           = ['1', '2', '5']     # minimum number of years of available data
 MISSING_VALUE                         = '-9999'
-SAMPLING_PERCENTAGES                  = ['25', '50', '75']  # minimum sampling percentages
+SAMPLING_PERCENTAGES                  = ['10', '25', '50', '75', '90']  # minimum sampling percentages
 T_FREQ                                = 0.5                 # in hours
+STATION_NBR_STR_LEN                   = 3
 
 
 
 # Step 1 : Obtain variables of interest
 
-var_names      = STATION_NAMES_FILENAME.split(STATION_NAMES_DELIMITER, VAR_NAMES_INDEX)[VAR_NAMES_INDEX].replace(TXT_SUFFIX, NULL_CHAR)
+var_names      = STATION_NAMES_FILENAME.split(STATION_IDS_DELIMITER, VAR_NAMES_INDEX)[VAR_NAMES_INDEX].replace(TXT_SUFFIX, NULL_CHAR)
 var_names_list = var_names.split(VAR_NAMES_DELIMITER)
 #pdb.set_trace()
 
@@ -91,24 +92,34 @@ var_names_list = var_names.split(VAR_NAMES_DELIMITER)
 
 # Step 2 : Obtain station numbers and ids
 
-station_names_file_pathname = SNOW_COMEAU_DIRECTORY + SLASH_BAR + STATION_NAMES_FILENAME
-station_names_file          = open(station_names_file_pathname, READING_CHAR)
+station_ids_set = set()
 
-station_nbrs_list = []
-station_ids_list  = []
+for sampling_percentage in SAMPLING_PERCENTAGES :
 
-for station_names_line in station_names_file :
+    station_ids_file_pathname = SNOW_DILUCA_DIRECTORY + SAMPLING_PERCENTAGE_DIRECTORY + sampling_percentage + MIN_NBR_YRS_DIRECTORY + SLASH_BAR + STATION_NAMES_FILENAME
+    station_ids_file          = open(station_ids_file_pathname, READING_CHAR)
 
-    amf_filename = os.path.basename(station_names_line)
-    station_nbr  = amf_filename.split(STATION_NAMES_DELIMITER)[STATION_NBR_INDEX]
-    station_id   = amf_filename.split(STATION_NAMES_DELIMITER)[STATION_ID_INDEX]
+    for station_ids_file_line in station_ids_file :
 
-    station_nbrs_list.append(station_nbr)
-    station_ids_list.append(station_id)
+        station_id = os.path.basename(station_ids_file_line).split(STATION_IDS_DELIMITER)[STATION_ID_INDEX]
+        station_ids_set.add(station_id)
+        #pdb.set_trace()
 
-station_names_file.close()
+    station_ids_file.close()
+    #pdb.set_trace()
+
+station_ids_list  = sorted(list(station_ids_set))
 #pdb.set_trace()
 
+station_nbrs_list = []
+
+for station_nbr in np.arange(1, (len(station_ids_list) + 1)) :
+
+    station_nbr_formatted = str(station_nbr).zfill(STATION_NBR_STR_LEN)
+    station_nbrs_list.append(station_nbr_formatted)
+    #pdb.set_trace()
+
+#pdb.set_trace() 
 
 
 # Step 3 : Process dates and data for 0.5 hour averages
@@ -176,7 +187,7 @@ for station_nbr, station_id in zip(station_nbrs_list, station_ids_list) :
     # Step 3.4 : Save relevant dates and data for 0.5 hour average
 
     dates_0_5_hr_array    = np.asarray(dates_0_5_hr_list)
-    dates_0_5_hr_filename = DATES_0_5_HR_FILENAME_1 + station_nbr + STATION_NAMES_DELIMITER + station_id + DATES_0_5_HR_FILENAME_2 + var_names + DATES_0_5_HR_FILENAME_3
+    dates_0_5_hr_filename = DATES_0_5_HR_FILENAME_1 + station_nbr + STATION_IDS_DELIMITER + station_id + DATES_0_5_HR_FILENAME_2 + var_names + DATES_0_5_HR_FILENAME_3
     dates_0_5_hr_pathname = SNOW_COMEAU_DIRECTORY + NUMPY_DIRECTORY + SLASH_BAR + dates_0_5_hr_filename
 
     np.save(dates_0_5_hr_pathname, dates_0_5_hr_array)
