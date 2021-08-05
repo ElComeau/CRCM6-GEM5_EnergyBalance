@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as tck
 
 
-def Make_comparison_plot(station_numbers, station_names, data_1, data_2, plot_title, y_axis_label, legend_label_1, legend_label_2, plot_caption, filepath) :
+def Make_comparison_plot(station_numbers, station_names, data_1, data_2, y_axis_label, legend_label_1, legend_label_2, filepath) :
   
     """
       
@@ -23,15 +23,11 @@ def Make_comparison_plot(station_numbers, station_names, data_1, data_2, plot_ti
           
         data_2 (array)          : Second set of data to compare.
           
-        plot_title (string)     : Title of the plot.
-         
         y_axis_label (sring)    : Label used for the y axis (ie, what the data represents).
           
         label_1 (string)        : Label used in legend of barplot for data_1.
           
         label_2 (string)        : Label used in legend of barplot for data_2.          
-
-        plot_caption (string)   : Caption for the plot.
 
         filename (string)       : Path of file where plot is saved.
 
@@ -40,7 +36,7 @@ def Make_comparison_plot(station_numbers, station_names, data_1, data_2, plot_ti
 
     Created       : June 3rd, 2021
 
-    Last modified : July 22th, 2021
+    Last modified : July 28th, 2021
 
     """
 
@@ -93,7 +89,6 @@ def Make_comparison_plot(station_numbers, station_names, data_1, data_2, plot_ti
         ax[0].bar(x_position - bar_width/2, data_1, bar_width, label=legend_label_1)
         ax[0].bar(x_position + bar_width/2, data_2, bar_width, label=legend_label_2)
 
-        #fig.suptitle(plot_title, fontsize=title_font_size, fontweight='bold')
         ax[0].set_ylabel(y_axis_label_barplot, fontsize=axis_font_size, fontweight='bold')
 
         ax[0].legend(fontsize=legend_font_size)
@@ -126,8 +121,6 @@ def Make_comparison_plot(station_numbers, station_names, data_1, data_2, plot_ti
         ax[1].yaxis.grid()
         ax[1].set_axisbelow(True)
         ax[1].set_title('b)', loc='left')
-
-        fig.text(0, -0.08, plot_caption, fontsize=axis_font_size)
 
         fig.tight_layout()
         plt.savefig(filepath, bbox_inches="tight")
