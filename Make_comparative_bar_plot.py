@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as tck
 
 
-def Make_comparison_plot(station_numbers, station_names, data_1, data_2, plot_title, y_axis_label, legend_label_1, legend_label_2, filepath) :
+def Make_comparison_plot(station_numbers, station_names, data_1, data_2, plot_title, y_axis_label, legend_label_1, legend_label_2, plot_caption, filepath) :
   
     """
       
@@ -31,6 +31,8 @@ def Make_comparison_plot(station_numbers, station_names, data_1, data_2, plot_ti
           
         label_2 (string)        : Label used in legend of barplot for data_2.          
 
+        plot_caption (string)   : Caption for the plot.
+
         filename (string)       : Path of file where plot is saved.
 
 
@@ -38,7 +40,7 @@ def Make_comparison_plot(station_numbers, station_names, data_1, data_2, plot_ti
 
     Created       : June 3rd, 2021
 
-    Last modified : July 19th, 2021
+    Last modified : July 22th, 2021
 
     """
 
@@ -63,10 +65,10 @@ def Make_comparison_plot(station_numbers, station_names, data_1, data_2, plot_ti
         data_relative_difference = abs( ( data_1 - data_2 ) / data_1 ) * 100
 
         bar_width         = 0.35    # width of bars in the barplots
-        figure_dimensions = (10,6)
+        figure_dimensions = (10 , 6)
         title_font_size   = 9 
-        axis_font_size    = 7
-        legend_font_size  = 6
+        axis_font_size    = 8
+        legend_font_size  = 7
 
         x_axis_label             = 'Site of measurement'
         y_axis_label_barplot     = y_axis_label
@@ -86,11 +88,12 @@ def Make_comparison_plot(station_numbers, station_names, data_1, data_2, plot_ti
 
         plt.figure()        
         fig, ax = plt.subplots(2, figsize=figure_dimensions)
+        #plt.subplots_adjust(right=0.6)
 
         ax[0].bar(x_position - bar_width/2, data_1, bar_width, label=legend_label_1)
         ax[0].bar(x_position + bar_width/2, data_2, bar_width, label=legend_label_2)
 
-        fig.suptitle(plot_title, fontsize=title_font_size, fontweight='bold')
+        #fig.suptitle(plot_title, fontsize=title_font_size, fontweight='bold')
         ax[0].set_ylabel(y_axis_label_barplot, fontsize=axis_font_size, fontweight='bold')
 
         ax[0].legend(fontsize=legend_font_size)
@@ -103,7 +106,7 @@ def Make_comparison_plot(station_numbers, station_names, data_1, data_2, plot_ti
 
         ax[0].yaxis.grid()
         ax[0].set_axisbelow(True)
-
+        ax[0].set_title('a)',  loc='left')
 
         # Step 4 : Create the scatter plot
 
@@ -114,15 +117,20 @@ def Make_comparison_plot(station_numbers, station_names, data_1, data_2, plot_ti
 
         ax[1].set_xticks(x_position)
         ax[1].yaxis.set_minor_locator(tck.AutoMinorLocator())
-        ax[1].tick_params(labelsize=axis_font_size)
+        ax[1].tick_params(labelsize=legend_font_size)
+        #ax[1].tick_params(labelsize=axis_font_size)
 
-        ax[1].set_xticklabels(station_ids, fontsize=axis_font_size, rotation=90)
+        ax[1].set_xticklabels(station_ids, fontsize=legend_font_size, rotation=90)
+        #ax[1].set_xticklabels(station_ids, fontsize=axis_font_size, rotation=90)
 
         ax[1].yaxis.grid()
         ax[1].set_axisbelow(True)
+        ax[1].set_title('b)', loc='left')
+
+        fig.text(0, -0.08, plot_caption, fontsize=axis_font_size)
 
         fig.tight_layout()
-        plt.savefig(filepath)
+        plt.savefig(filepath, bbox_inches="tight")
 
 
 # End of function definition
