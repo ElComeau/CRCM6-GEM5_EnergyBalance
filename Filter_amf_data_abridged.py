@@ -28,7 +28,7 @@ Last modified : August 5th, 2021
 DATES_AND_DATA_R_DIRECTORY = '/home/data/Validation/AmeriFlux'                 # 'R' for reading
 DATES_AND_DATA_W_DIRECTORY = '/snow/comeau/FLUXNET_America/AMF_1990-2017/npy'  # 'W' for writing
 MIN_NBR_YRS_DIRECTORY      = '/num-years1'
-STATION_IDS_R_DIRECTORY    = '/snow/diluca/FLUXNET_America/1990-2017/v3/TA-SW_IN-SW_OUT-LW_IN-LW_OUT-H-LE/sampling-percentage'
+STATION_IDS_DIRECTORY      = '/snow/diluca/FLUXNET_America/1990-2017/v3/TA-SW_IN-SW_OUT-LW_IN-LW_OUT-H-LE/sampling-percentage'
 
 
 # Step 0.2 : Define filenames
@@ -90,6 +90,7 @@ T_FREQ               = 0.5                                    # in hours
 
 var_names_string = STATION_NAMES_FILENAME.split(STATION_IDS_DELIMITER, VAR_NAMES_INDEX)[VAR_NAMES_INDEX].replace(TXT_SUFFIX, NULL_CHAR)
 var_names_list   = var_names_string.split(VAR_NAMES_DELIMITER)
+#pdb.set_trace()
 
 
 
@@ -99,17 +100,20 @@ station_ids_set = set()
 
 for sampling_percentage in SAMPLING_PERCENTAGES :
 
-    station_ids_file_pathname = STATION_IDS_R_DIRECTORY + sampling_percentage + MIN_NBR_YRS_DIRECTORY + SLASH_BAR + STATION_NAMES_FILENAME
+    station_ids_file_pathname = STATION_IDS_DIRECTORY + sampling_percentage + MIN_NBR_YRS_DIRECTORY + SLASH_BAR + STATION_NAMES_FILENAME
     station_ids_file          = open(station_ids_file_pathname, READING_CHAR)
 
     for station_ids_file_line in station_ids_file :
 
         station_id = os.path.basename(station_ids_file_line).split(STATION_IDS_DELIMITER)[STATION_ID_INDEX]
         station_ids_set.add(station_id)
+        #pdb.set_trace()
 
     station_ids_file.close()
+    #pdb.set_trace()
 
 station_ids_list = sorted(list(station_ids_set))
+#pdb.set_trace()
 
 station_nbrs_list = []
 
@@ -117,6 +121,8 @@ for station_nbr in np.arange(1, (len(station_ids_list) + 1)) :
 
     station_nbr_formatted = str(station_nbr).zfill(STATION_NBR_STR_LEN)
     station_nbrs_list.append(station_nbr_formatted)
+    #pdb.set_trace()
+#pdb.set_trace() 
 
 
 
@@ -132,6 +138,7 @@ for station_nbr, station_id in zip(station_nbrs_list, station_ids_list) :
     dates_and_data_pathname_pattern = DATES_AND_DATA_R_DIRECTORY + SLASH_BAR + AMF_PREFIX + station_id + STAR + HALF_HOURLY + STAR + CSV_SUFFIX
     dates_and_data_pathname         = glob.glob(dates_and_data_pathname_pattern)[PATHNAME_INDEX]
     dates_and_data_file             = open(dates_and_data_pathname, READING_CHAR)
+    #pdb.set_trace()
 
 
     # Step 3.2 : Obtain variables for the dates and data files
@@ -143,6 +150,7 @@ for station_nbr, station_id in zip(station_nbrs_list, station_ids_list) :
     var_names_in_file_len = len(var_names_in_file)
 
     var_names_in_file[ var_names_in_file_len - 1 ] = var_names_in_file[ var_names_in_file_len - 1 ].replace(NEW_LINE_CHAR, NULL_CHAR)
+    #pdb.set_trace()
 
 
     # Step 3.3 : Extract relevant dates and data
@@ -174,8 +182,10 @@ for station_nbr, station_id in zip(station_nbrs_list, station_ids_list) :
 
             dates_list.append(date_elapsed_time)
             data_list.append(data_line_list)
+            #pdb.set_trace()
 
     total_dates_list.append(len(dates_list))
+    #pdb.set_trace()
 
 
     # Step 3.4 : Save relevant dates and data
@@ -190,6 +200,7 @@ for station_nbr, station_id in zip(station_nbrs_list, station_ids_list) :
     data_pathname = dates_pathname.replace(DATES_ID, DATA_ID)
 
     np.save(data_pathname, data_array)
+    #pdb.set_trace()
 
 
 # Step 3.5 : Save number of years of data
