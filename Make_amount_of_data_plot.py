@@ -12,6 +12,7 @@ The plot contains two subplots, both of which are comparative barplots. The firs
 The second subplot shows the amount of years of 3 hour data available per station and per minimum sampling percentages.
 The plot is saved to a file.
 
+
 Author        : Élise Comeau
 
 Created       : July 27th, 2021
