@@ -2,22 +2,33 @@ import os
 import glob
 import numpy as np
 import sys
-import Make_comparison_plots_v6 as mcp
+import Make_comparative_bar_plot as mcbp
 import pdb
 
+"""
+
+This script produces a plot showing the amount of data present at each AmeriFlux (AMF) station according to the minimum sampling percentage used to produce the 3 hour means from the 30 minute means.
+The plot contains two subplots, both of which are comparative barplots. The first barplot shows the ratio between the amount of 30 mins means over the amount of 3 hour means per station and per minimum sampling percentage.
+The second subplot shows the amount of years of 3 hour data available per station and per minimum sampling percentages.
+The plot is saved to a file.
+
+Author        : Élise Comeau
+
+Created       : July 27th, 2021
+
+Last modified : August 5th, 2021
+
+"""
 
 
 # Step 0 : Define constants
 
 # Step 0.1 : Define directories
 
-MIN_NBR_YRS_DIRECTORY         = '/num-years1'
-NUMPY_DIRECTORY               = '/npy'
-PNG_DIRECTORY                 = '/png'
-SAMPLING_PERCENTAGE_DIRECTORY = '/sampling-percentage'
-SNOW_COMEAU_DIRECTORY         = '/snow/comeau/FLUXNET_America/AMF_1990-2017'
-#SNOW_DILUCA_DIRECTORY         = '/snow/diluca/FLUXNET_America/1990-2017/v1/TA-SW_IN-SW_OUT-LW_IN-LW_OUT-H-LE'
-SNOW_DILUCA_DIRECTORY         = '/snow/diluca/FLUXNET_America/1990-2017/v2/TA-SW_IN-SW_OUT-LW_IN-LW_OUT-H-LE'
+HALF_HR_DIRECTORY     = '/snow/comeau/FLUXNET_America/AMF_1990-2017/npy'
+MIN_NBR_YRS_DIRECTORY = '/num-years1'
+PLOT_DIRECTORY        = '/snow/comeau/FLUXNET_America/AMF_1990-2017/png'
+THREE_HR_DIRECTORY    = '/snow/diluca/FLUXNET_America/1990-2017/v3/TA-SW_IN-SW_OUT-LW_IN-LW_OUT-H-LE/sampling-percentage'
 
 
 # Step 0.2 : Define filenames
@@ -35,11 +46,12 @@ PNG_SUFFIX = '.png'
 
 STATION_NAMES_DELIMITER        = '_'
 STATION_NBRS_AND_IDS_DELIMITER = ' '
-NBR_OF_YRS_OF_DATA_DELIMITER   = ' '
+YRS_OF_DATA_DELIMITER          = ' '
 
 
 # Step 0.5 : Define special characters
 
+COLON_CHAR    = ':'
 NEW_LINE_CHAR = '\n'
 NULL_CHAR     = ''
 READING_CHAR  = 'r'
@@ -49,142 +61,125 @@ STAR          = '*'
 
 # Step 0.6 : Define indexes
 
-DATE_INDEX               = 0
-FILEPATH_INDEX           = 0
-NBR_OF_YRS_OF_DATA_INDEX = 4
-STATION_ID_INDEX         = 3
-STATION_NBR_INDEX        = 2
+DATE_INDEX          = 0
+FILEPATH_INDEX      = 0
+FIRST_ITEM_INDEX    = 0
+STATION_ID_INDEX    = 3
+STATION_NBR_INDEX_1 = 2
+STATION_NBR_INDEX_2 = 2
+YRS_OF_DATA_INDEX   = 4
 
 
 # Step 0.7 : Define values
 
 DATA_ID              = 'data'
 DATES_ID             = 'dates'
-MIN_NBR_DATA         = ['1', '2', '4', '5', '6']
+MIN_NBR_DATA         = ['1', '2', '3', '4', '5', '6']
 NBR_OF_HEADER_ROWS   = 3
-SAMPLING_PERCENTAGES = ['10', '25', '50', '75', '90']  # minimum sampling percentages
-STATION_TO_SKIP      = 'US-Ro1'                        # station is only present when sampling percentage is 90%, rendering comparisons impossible
+ROUNDING_POSITION    = 3
+SAMPLING_PERCENTAGES = ['10', '25', '50', '60', '75', '100']  # minimum sampling percentages
+STATION_STR_1        = 'Station '
+STATION_STR_2        = ':'
 
 
 # Step 0.7 : Define plot constants
 
-NBR_OF_ENTRY_RATIOS_Y_AXIS_LABEL = 'nbr of entries ratio (30 mins / 180 mins)'
-NBR_OF_YRS_OF_DATA_Y_AXIS_LABEL  = 'nbr of years of data (180 mins avg)'
+ENTRY_RATIOS_Y_AXIS_LABEL                   = 'amount of entries ratio (30 mins / 180 mins)'
+YRS_OF_DATA_Y_AXIS_LABEL                    = 'amount of years of data (180 mins avg)'
+ENTRY_RATIOS_AND_YRS_OF_DATA_LEGEND_LABEL_1 = 'AMF - ('
+ENTRY_RATIOS_AND_YRS_OF_DATA_LEGEND_LABEL_2 = '/6+ data)'
+PLOT_TYPE                                   = 'amount-of-entries-ratio-and-yrs'
+X_AXIS_LABEL                                = 'site of measurement'
 
-NBR_OF_ENTRY_RATIOS_AND_YRS_OF_DATA_LEGEND_LABEL_1 = 'AMF - ('
-NBR_OF_ENTRY_RATIOS_AND_YRS_OF_DATA_LEGEND_LABEL_2 = '/6+ data)'
 
-'''
-NBR_OF_ENTRIES_CAPTION      = Number of entries of available AmeriFlux (AMF) data according to AMF station. Stations are referred to by their id number, country (Canada or United States) and station name.
-a) Number of entries of available data. Blue bars represent data averaged over 30 minutes. Orange bars represent data averaged over 180 minutes, ie the resampled results.
-Resampling involved two criteria : 1) A minimum number of years of data must be available at the station; 2) 180 minutes average is calculated only if more than a certain
-percentage of the corresponding 30 minutes data is present. b) Relative difference in the number of entries of available data for the 180 minutes average compared to the
-30 minutes average.
-'''
+# Step 1 : Obtain station ids and numbers
 
-PLOT_TYPE = 'nbr-of-entries-ratio-and-yrs'
+station_ids_file_pathname = THREE_HR_DIRECTORY + SAMPLING_PERCENTAGES[0] + MIN_NBR_YRS_DIRECTORY + SLASH_BAR + STATION_NAMES_FILENAME
+station_ids_file          = open(station_ids_file_pathname, READING_CHAR)
 
-nbr_of_entry_ratios_all_stations = []
-nbr_of_yrs_of_data_all_stations  = []
+station_ids_list  = []
+station_nbrs_list = []
 
-nbr_of_entry_ratios_and_yrs_of_data_legend_labels_all = []
-station_ids_all_sampling_percentages = []
+for station_ids_line in station_ids_file :
+
+    station_filename = os.path.basename(station_ids_line)
+    station_id       = station_filename.split(STATION_NAMES_DELIMITER)[STATION_ID_INDEX]
+    station_nbr      = station_filename.split(STATION_NAMES_DELIMITER)[STATION_NBR_INDEX_1]
+
+    station_ids_list.append(station_id)
+    station_nbrs_list.append(station_nbr)
+
+station_ids_file.close()
+
+
+# Step 2 : Obtain station filenames
+
+entry_ratios_all_stations = []
+yrs_of_data_all_stations  = []
+
+entry_ratios_and_yrs_of_data_legend_labels = []
 
 for sampling_percentage in SAMPLING_PERCENTAGES :
 
-    station_to_skip_nbr = 0  # station number of the station to skip
+    station_pathnames_file_pathname = THREE_HR_DIRECTORY + sampling_percentage + MIN_NBR_YRS_DIRECTORY + SLASH_BAR + STATION_NAMES_FILENAME
+    station_pathnames_file          = open(station_pathnames_file_pathname)
+    station_pathnames               = station_pathnames_file.readlines()
 
-    # Step 1 : Obtain station numbers, ids and station filepaths
+    yrs_of_data_pathname = THREE_HR_DIRECTORY + sampling_percentage + MIN_NBR_YRS_DIRECTORY + SLASH_BAR + SUMMARY_FILENAME
+    yrs_of_data_file     = open(yrs_of_data_pathname)
+    yrs_of_data_content  = yrs_of_data_file.readlines()
 
-    station_names_file_pathname = SNOW_DILUCA_DIRECTORY + SAMPLING_PERCENTAGE_DIRECTORY + sampling_percentage + MIN_NBR_YRS_DIRECTORY + SLASH_BAR + STATION_NAMES_FILENAME
-    station_names_file          = open(station_names_file_pathname, READING_CHAR)
+    entry_ratios_per_station = []
+    yrs_of_data_per_station  = []
 
-    station_nbrs_list         = []
-    station_ids_list          = [] 
-    dates_3_hr_filepaths_list = []
+    for station_id in station_ids_list :
 
-    for station_names_line in station_names_file :
+        station_filepath = [ station_pathname for station_pathname in station_pathnames if station_id in station_pathname ] 
 
-        amf_filename        = os.path.basename(station_names_line)
-        station_nbr         = amf_filename.split(STATION_NAMES_DELIMITER)[STATION_NBR_INDEX]
-        station_id          = amf_filename.split(STATION_NAMES_DELIMITER)[STATION_ID_INDEX]
-        dates_3_hr_filepath = station_names_line.replace(NEW_LINE_CHAR, NULL_CHAR).replace(SLASH_BAR+SLASH_BAR, SLASH_BAR).replace(DATA_ID, DATES_ID)
+        if ( station_filepath ) :
 
-        if ( station_id != STATION_TO_SKIP ) :
 
-            station_ids_list.append(station_id)
-            station_nbrs_list.append(station_nbr)
-            dates_3_hr_filepaths_list.append(dates_3_hr_filepath)
+            # Step 3 : Obtain ratios of amount of entries (half hour over 3 hour averages)
+
+            three_hr_dates_filepath = station_filepath[FIRST_ITEM_INDEX].replace(NEW_LINE_CHAR, NULL_CHAR).replace(SLASH_BAR+SLASH_BAR, SLASH_BAR).replace(DATA_ID, DATES_ID)                        
+
+            three_hr_dates             = np.load(three_hr_dates_filepath)
+            three_hr_amount_of_entries = three_hr_dates.shape[DATE_INDEX]
+
+            half_hr_dates_filepath_pattern = HALF_HR_DIRECTORY + SLASH_BAR + STAR + DATES_ID + STAR + station_id + STAR
+            half_hr_dates_filepath         = glob.glob(half_hr_dates_filepath_pattern)[FILEPATH_INDEX]
+            half_hr_dates                  = np.load(half_hr_dates_filepath)
+            half_hr_amount_of_entries      = half_hr_dates.shape[DATE_INDEX]
+
+            entry_ratio = round( (half_hr_amount_of_entries / three_hr_amount_of_entries), ROUNDING_POSITION)
+
+
+            # Step 4 : Obtain number of years of data for 3 hour averages
+
+            station_nbr             = int( os.path.basename(three_hr_dates_filepath).split(STATION_NAMES_DELIMITER)[STATION_NBR_INDEX_2] )
+            station_str             = STATION_STR_1 + str(station_nbr) + STATION_STR_2   
+            station_yrs_of_data_str = [ yrs_of_data_item for yrs_of_data_item in yrs_of_data_content if station_str in yrs_of_data_item ]
+
+            yrs_of_data = float( station_yrs_of_data_str[FIRST_ITEM_INDEX].split(YRS_OF_DATA_DELIMITER)[YRS_OF_DATA_INDEX].replace(NEW_LINE_CHAR, NULL_CHAR) )
 
         else :
 
-            station_to_skip_nbr = int(station_nbr)
+            entry_ratio = 0
+            yrs_of_data = 0
 
-    station_names_file.close()
-    #station_ids_list.sort()
-    station_ids_all_sampling_percentages.append(station_ids_list)
-    #pdb.set_trace()
+        entry_ratios_per_station.append(entry_ratio)
+        yrs_of_data_per_station.append(yrs_of_data)
 
+    station_pathnames_file.close()
+    yrs_of_data_file.close()
 
-    # Step 2 : Obtain ratios of number of entries (0.5 over 3 hour averages)
+    entry_ratios_all_stations.append(entry_ratios_per_station)
+    yrs_of_data_all_stations.append(yrs_of_data_per_station)
 
-    nbr_of_entries_ratios_per_station = []
+    min_nbr_of_data                           = MIN_NBR_DATA[ SAMPLING_PERCENTAGES.index(sampling_percentage) ]
+    entry_ratios_and_yrs_of_data_legend_label = ENTRY_RATIOS_AND_YRS_OF_DATA_LEGEND_LABEL_1 + min_nbr_of_data + ENTRY_RATIOS_AND_YRS_OF_DATA_LEGEND_LABEL_2 
 
-    for dates_3_hr_filepath, station_id in zip(dates_3_hr_filepaths_list, station_ids_list) :
-
-        dates_3_hr          = np.load(dates_3_hr_filepath)
-        nbr_of_entries_3_hr = dates_3_hr.shape[DATE_INDEX]
-
-        dates_0_5_hr_filepath_pattern = SNOW_COMEAU_DIRECTORY + NUMPY_DIRECTORY + SLASH_BAR + STAR + DATES_ID + STAR + station_id + STAR
-        dates_0_5_hr_filepath         = glob.glob(dates_0_5_hr_filepath_pattern)[FILEPATH_INDEX]
-        dates_0_5_hr                  = np.load(dates_0_5_hr_filepath)
-        nbr_of_entries_0_5_hr         = dates_0_5_hr.shape[DATE_INDEX]
-
-        nbr_of_entries_ratio = round( (nbr_of_entries_0_5_hr / nbr_of_entries_3_hr), 3)
-
-        nbr_of_entries_ratios_per_station.append(nbr_of_entries_ratio)
-        #pdb.set_trace()
-
-
-	
-    # Step 3 : Obtain number of years of data for 3 hour averages
-
-    nbr_of_yrs_of_data_filename = SUMMARY_FILENAME
-    nbr_of_yrs_of_data_pathname = SNOW_DILUCA_DIRECTORY + SAMPLING_PERCENTAGE_DIRECTORY + sampling_percentage + MIN_NBR_YRS_DIRECTORY + SLASH_BAR + nbr_of_yrs_of_data_filename
-
-    nbr_of_yrs_of_data_per_station = []
-
-    nbr_of_yrs_of_data_file = open(nbr_of_yrs_of_data_pathname, READING_CHAR)
-
-    nbr_of_yrs_of_data_line_counter = 1
-    nbr_of_stations                 = len(station_nbrs_list)
-
-    for nbr_of_yrs_of_data_line in nbr_of_yrs_of_data_file :
-
-        if ( ( nbr_of_yrs_of_data_line_counter > NBR_OF_HEADER_ROWS ) and ( nbr_of_yrs_of_data_line_counter < ( nbr_of_stations + NBR_OF_HEADER_ROWS + 1 ) ) ) :
-
-            station_nbr = int( nbr_of_yrs_of_data_line.split(NBR_OF_YRS_OF_DATA_DELIMITER)[3].replace(':', '') )
-
-            if ( station_nbr != station_to_skip_nbr ) :
- 
-                nbr_of_yrs_of_data = float( nbr_of_yrs_of_data_line.split(NBR_OF_YRS_OF_DATA_DELIMITER)[NBR_OF_YRS_OF_DATA_INDEX].replace(NEW_LINE_CHAR, NULL_CHAR) )
-                nbr_of_yrs_of_data_per_station.append(nbr_of_yrs_of_data)
-                #pdb.set_trace()
-
-            else :
-                nbr_of_yrs_of_data_line_counter = nbr_of_yrs_of_data_line_counter - 1
-
-        nbr_of_yrs_of_data_line_counter = nbr_of_yrs_of_data_line_counter + 1
-
-    nbr_of_yrs_of_data_file.close()
-
-    nbr_of_entry_ratios_all_stations.append(nbr_of_entries_ratios_per_station)
-    nbr_of_yrs_of_data_all_stations.append(nbr_of_yrs_of_data_per_station)
- 
-    min_nbr_of_data                                  = MIN_NBR_DATA[ SAMPLING_PERCENTAGES.index(sampling_percentage) ]
-    nbr_of_entry_ratios_and_yrs_of_data_legend_label = NBR_OF_ENTRY_RATIOS_AND_YRS_OF_DATA_LEGEND_LABEL_1 + min_nbr_of_data + NBR_OF_ENTRY_RATIOS_AND_YRS_OF_DATA_LEGEND_LABEL_2 
-    nbr_of_entry_ratios_and_yrs_of_data_legend_labels_all.append(nbr_of_entry_ratios_and_yrs_of_data_legend_label)
-    #pdb.set_trace()
+    entry_ratios_and_yrs_of_data_legend_labels.append(entry_ratios_and_yrs_of_data_legend_label)
 
 
 # Step 4 : Produce plot of ratios and number of years of data
@@ -198,8 +193,6 @@ for station_nbr, station_id in zip( station_nbrs_list, station_ids_list ) :
     station_nbrs_and_ids.append(station_nbr_and_id)
 
 plot_filename = PLOT_TYPE + MIN_NBR_YRS_DIRECTORY.replace(SLASH_BAR, STATION_NAMES_DELIMITER) + PNG_SUFFIX
-plot_pathname = SNOW_COMEAU_DIRECTORY + PNG_DIRECTORY + SLASH_BAR + plot_filename
+plot_pathname = PLOT_DIRECTORY + SLASH_BAR + plot_filename
 
-#pdb.set_trace()
-
-mcp.Make_comparison_plot(station_nbrs_and_ids, nbr_of_entry_ratios_all_stations, nbr_of_yrs_of_data_all_stations, NBR_OF_ENTRY_RATIOS_Y_AXIS_LABEL, NBR_OF_YRS_OF_DATA_Y_AXIS_LABEL, nbr_of_entry_ratios_and_yrs_of_data_legend_labels_all, nbr_of_entry_ratios_and_yrs_of_data_legend_labels_all, plot_pathname)
+mcbp.Make_comparative_bar_plot(station_nbrs_and_ids, entry_ratios_all_stations, yrs_of_data_all_stations, X_AXIS_LABEL, ENTRY_RATIOS_Y_AXIS_LABEL, YRS_OF_DATA_Y_AXIS_LABEL, entry_ratios_and_yrs_of_data_legend_labels, entry_ratios_and_yrs_of_data_legend_labels, plot_pathname)
