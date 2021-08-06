@@ -8,7 +8,7 @@ import Get_datetime_index as gdi
 import pdb
 
 
-def Compare_min_data_percentage(dates_arrays_list, data_arrays_list, labels_list, var_name, filepath) :
+def Make_time_series_plot(dates_arrays_list, data_arrays_list, labels_list, var_name, filepath) :
 
     """
     Creates a plot showing the values of different sets of data according to their respective dates.
@@ -57,8 +57,7 @@ def Compare_min_data_percentage(dates_arrays_list, data_arrays_list, labels_list
     fig_size_width  = 22
     fig_size_height = 6
 
-    qtty_of_data    = 24
-    marker_types    = ['x', '^', 'o', 's', 'd', '*']
+    marker_types    = ['x', '^', 'o', 's', 'd', '*', 'p']
     alpha_value     = 0.7
 
     datetime_format  = '%H:%M %d/%m/%y'
