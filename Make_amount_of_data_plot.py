@@ -17,7 +17,7 @@ Author        : Élise Comeau
 
 Created       : July 27th, 2021
 
-Last modified : August 5th, 2021
+Last modified : August 9th, 2021
 
 """
 
@@ -26,10 +26,10 @@ Last modified : August 5th, 2021
 
 # Step 0.1 : Define directories
 
-HALF_HR_DIRECTORY     = '/snow/comeau/FLUXNET_America/AMF_1990-2017/npy'
-MIN_NBR_YRS_DIRECTORY = '/num-years1'
-PLOT_DIRECTORY        = '/snow/comeau/FLUXNET_America/AMF_1990-2017/png'
-THREE_HR_DIRECTORY    = '/snow/diluca/FLUXNET_America/1990-2017/v3/TA-SW_IN-SW_OUT-LW_IN-LW_OUT-H-LE/sampling-percentage'
+INPUT_DIRECTORY_1 = '/snow/diluca/FLUXNET_America/1990-2017/v3/TA-SW_IN-SW_OUT-LW_IN-LW_OUT-H-LE/sampling-percentage'
+INPUT_DIRECTORY_2 = '/num-years1'
+INPUT_DIRECTORY_3 = '/npy'
+OUTPUT_DIRECTORY  = '/snow/comeau/FLUXNET_America/AMF_1990-2017/png'
 
 
 # Step 0.2 : Define filenames
@@ -40,7 +40,9 @@ SUMMARY_FILENAME       = 'AMF_summary_1990-2017_TA-SW_IN-SW_OUT-LW_IN-LW_OUT-H-L
 
 # Step 0.3 : Define prefixes and suffixes
 
-PNG_SUFFIX = '.png'
+HALF_HR_SUFFIX  = '_30.npy'
+THREE_HR_SUFFIX = '_3.npy'
+PNG_SUFFIX      = '.png'
 
 
 # Step 0.4 : Define delimiters
@@ -95,7 +97,7 @@ X_AXIS_LABEL                                = 'site of measurement'
 
 # Step 1 : Obtain station ids and numbers
 
-station_ids_file_pathname = THREE_HR_DIRECTORY + SAMPLING_PERCENTAGES[0] + MIN_NBR_YRS_DIRECTORY + SLASH_BAR + STATION_NAMES_FILENAME
+station_ids_file_pathname = INPUT_DIRECTORY_1 + SAMPLING_PERCENTAGES[0] + INPUT_DIRECTORY_2 + SLASH_BAR + STATION_NAMES_FILENAME
 station_ids_file          = open(station_ids_file_pathname, READING_CHAR)
 
 station_ids_list  = []
@@ -122,11 +124,11 @@ entry_ratios_and_yrs_of_data_legend_labels = []
 
 for sampling_percentage in SAMPLING_PERCENTAGES :
 
-    station_pathnames_file_pathname = THREE_HR_DIRECTORY + sampling_percentage + MIN_NBR_YRS_DIRECTORY + SLASH_BAR + STATION_NAMES_FILENAME
+    station_pathnames_file_pathname = INPUT_DIRECTORY_1 + sampling_percentage + INPUT_DIRECTORY_2 + SLASH_BAR + STATION_NAMES_FILENAME
     station_pathnames_file          = open(station_pathnames_file_pathname)
     station_pathnames               = station_pathnames_file.readlines()
 
-    yrs_of_data_pathname = THREE_HR_DIRECTORY + sampling_percentage + MIN_NBR_YRS_DIRECTORY + SLASH_BAR + SUMMARY_FILENAME
+    yrs_of_data_pathname = INPUT_DIRECTORY_1 + sampling_percentage + INPUT_DIRECTORY_2 + SLASH_BAR + SUMMARY_FILENAME
     yrs_of_data_file     = open(yrs_of_data_pathname)
     yrs_of_data_content  = yrs_of_data_file.readlines()
 
@@ -147,12 +149,12 @@ for sampling_percentage in SAMPLING_PERCENTAGES :
             three_hr_dates             = np.load(three_hr_dates_filepath)
             three_hr_amount_of_entries = three_hr_dates.shape[DATE_INDEX]
 
-            half_hr_dates_filepath_pattern = HALF_HR_DIRECTORY + SLASH_BAR + STAR + DATES_ID + STAR + station_id + STAR
-            half_hr_dates_filepath         = glob.glob(half_hr_dates_filepath_pattern)[FILEPATH_INDEX]
-            half_hr_dates                  = np.load(half_hr_dates_filepath)
-            half_hr_amount_of_entries      = half_hr_dates.shape[DATE_INDEX]
+            half_hr_dates_filepath    = three_hr_dates_filepath.replace(THREE_HR_SUFFIX, HALF_HR_SUFFIX)
+            half_hr_dates             = np.load(half_hr_dates_filepath)
+            half_hr_amount_of_entries = half_hr_dates.shape[DATE_INDEX]
 
             entry_ratio = round( (half_hr_amount_of_entries / three_hr_amount_of_entries), ROUNDING_POSITION)
+
 
 
             # Step 4 : Obtain number of years of data for 3 hour averages
@@ -193,7 +195,7 @@ for station_nbr, station_id in zip( station_nbrs_list, station_ids_list ) :
 
     station_nbrs_and_ids.append(station_nbr_and_id)
 
-plot_filename = PLOT_TYPE + MIN_NBR_YRS_DIRECTORY.replace(SLASH_BAR, STATION_NAMES_DELIMITER) + PNG_SUFFIX
-plot_pathname = PLOT_DIRECTORY + SLASH_BAR + plot_filename
+plot_filename = PLOT_TYPE + INPUT_DIRECTORY_2.replace(SLASH_BAR, STATION_NAMES_DELIMITER) + PNG_SUFFIX
+plot_pathname = OUTPUT_DIRECTORY + SLASH_BAR + plot_filename
 
 mcbp.Make_comparative_bar_plot(station_nbrs_and_ids, entry_ratios_all_stations, yrs_of_data_all_stations, X_AXIS_LABEL, ENTRY_RATIOS_Y_AXIS_LABEL, YRS_OF_DATA_Y_AXIS_LABEL, entry_ratios_and_yrs_of_data_legend_labels, entry_ratios_and_yrs_of_data_legend_labels, plot_pathname)
