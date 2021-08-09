@@ -16,7 +16,7 @@ Author        : Élise Comeau
 
 Created       : July 28th, 2021
 
-Last modified : August 5th, 2021
+Last modified : August 9th, 2021
 
 """
 
@@ -24,11 +24,10 @@ Last modified : August 5th, 2021
 
 # Step 0.1 : Define directories
 
-HALF_HR_DIRECTORY     = '/snow/comeau/FLUXNET_America/AMF_1990-2017/npy'
-MIN_NBR_YRS_DIRECTORY = '/num-years1'
-NUMPY_DIRECTORY       = '/npy'
-PLOT_DIRECTORY        = '/snow/comeau/FLUXNET_America/AMF_1990-2017/png'
-THREE_HR_DIRECTORY    = '/snow/diluca/FLUXNET_America/1990-2017/v3/TA-SW_IN-SW_OUT-LW_IN-LW_OUT-H-LE/sampling-percentage'
+INPUT_DIRECTORY_1 = '/snow/diluca/FLUXNET_America/1990-2017/v3/TA-SW_IN-SW_OUT-LW_IN-LW_OUT-H-LE/sampling-percentage'
+INPUT_DIRECTORY_2 = '/num-years1'
+INPUT_DIRECTORY_3 = '/npy'
+OUTPUT_DIRECTORY  = '/snow/comeau/FLUXNET_America/AMF_1990-2017/png'
 
 
 # Step 0.2 : Define filenames
@@ -38,9 +37,11 @@ STATION_NAMES_FILENAME = 'AMF_station-filelist_1990-2017_TA-SW_IN-SW_OUT-LW_IN-L
 
 # Step 0.3 : Define prefixes and suffixes
 
-AMF_PREFIX = 'AMF_'
-PNG_SUFFIX = '.png'
-TXT_SUFFIX = '.txt'
+AMF_PREFIX      = 'AMF_'
+HALF_HR_SUFFIX  = '_30.npy'
+THREE_HR_SUFFIX = '_3.npy'
+PNG_SUFFIX      = '.png'
+TXT_SUFFIX      = '.txt'
 
 
 # Step 0.4 : Define delimiters
@@ -92,7 +93,7 @@ var_names_list  = var_names.split(VAR_NAMES_DELIMITER)
 
 # Step 2 : Obtain station numbers and ids
 
-station_names_file_pathname = THREE_HR_DIRECTORY + SAMPLING_PERCENTAGES[0] + MIN_NBR_YRS_DIRECTORY + SLASH_BAR + STATION_NAMES_FILENAME
+station_names_file_pathname = INPUT_DIRECTORY_1 + SAMPLING_PERCENTAGES[0] + INPUT_DIRECTORY_2 + SLASH_BAR + STATION_NAMES_FILENAME
 station_names_file          = open(station_names_file_pathname, READING_CHAR)
 
 station_nbrs_list         = []
@@ -100,9 +101,9 @@ station_ids_list          = []
 
 for station_names_line in station_names_file :
 
-    amf_filename        = os.path.basename(station_names_line)
-    station_nbr         = amf_filename.split(STATION_NAMES_DELIMITER)[STATION_NBR_INDEX]
-    station_id          = amf_filename.split(STATION_NAMES_DELIMITER)[STATION_ID_INDEX]
+    amf_filename = os.path.basename(station_names_line)
+    station_nbr  = amf_filename.split(STATION_NAMES_DELIMITER)[STATION_NBR_INDEX]
+    station_id   = amf_filename.split(STATION_NAMES_DELIMITER)[STATION_ID_INDEX]
 
     station_ids_list.append(station_id)
     station_nbrs_list.append(station_nbr)
@@ -119,29 +120,31 @@ for station_id, station_nbr in zip(station_ids_list, station_nbrs_list) :
     station_data_list  = []
     labels_list        = []
 
-
     # Step 3.1 : Obtain dates and data for 0.5 hour average
 
-    dates_0_5_hr_filepath_pattern = HALF_HR_DIRECTORY + SLASH_BAR + STAR + DATES_ID + STAR + station_id + STAR
-    dates_0_5_hr_filepath         = glob.glob(dates_0_5_hr_filepath_pattern)[FILEPATH_INDEX]
-    dates_0_5_hr                  = np.load(dates_0_5_hr_filepath)
+    dates_0_5_hr_filepath_pattern = INPUT_DIRECTORY_1 + SAMPLING_PERCENTAGES[0] + INPUT_DIRECTORY_2 + INPUT_DIRECTORY_3 + SLASH_BAR + STAR + DATES_ID + STAR + station_id + STAR + HALF_HR_SUFFIX
+    dates_0_5_hr_files            = glob.glob(dates_0_5_hr_filepath_pattern)
 
-    data_0_5_hr_filepath_pattern = dates_0_5_hr_filepath_pattern.replace(DATES_ID, DATA_ID)
-    data_0_5_hr_filepath         = glob.glob(data_0_5_hr_filepath_pattern)[FILEPATH_INDEX]
-    data_0_5_hr                  = np.load(data_0_5_hr_filepath)
+    if ( dates_0_5_hr_files ) :
 
-    station_dates_list.append(dates_0_5_hr)
-    station_data_list.append(data_0_5_hr)
-    labels_list.append(HALF_HR_LEGEND_LABEL)
+        dates_0_5_hr_filepath         = glob.glob(dates_0_5_hr_filepath_pattern)[FILEPATH_INDEX]
+        dates_0_5_hr                  = np.load(dates_0_5_hr_filepath)
 
+        data_0_5_hr_filepath_pattern = dates_0_5_hr_filepath_pattern.replace(DATES_ID, DATA_ID)
+        data_0_5_hr_filepath         = glob.glob(data_0_5_hr_filepath_pattern)[FILEPATH_INDEX]
+        data_0_5_hr                  = np.load(data_0_5_hr_filepath)
 
-    # Step 3.2 : Obtain dates and data for 3 hour averages
+        station_dates_list.append(dates_0_5_hr)
+        station_data_list.append(data_0_5_hr)
+        labels_list.append(HALF_HR_LEGEND_LABEL)
 
     for sampling_percentage in SAMPLING_PERCENTAGES :
 
-        dates_3_hr_filepath_pattern = THREE_HR_DIRECTORY + sampling_percentage + MIN_NBR_YRS_DIRECTORY + NUMPY_DIRECTORY + SLASH_BAR + AMF_PREFIX + DATES_ID + STAR + station_id + STAR
 
-        dates_3_hr_files = glob.glob(dates_3_hr_filepath_pattern)
+        # Step 3.2 : Obtain dates and data for 3 hour averages
+
+        dates_3_hr_filepath_pattern = INPUT_DIRECTORY_1 + sampling_percentage + INPUT_DIRECTORY_2 + INPUT_DIRECTORY_3 + SLASH_BAR + STAR + DATES_ID + STAR + station_id + STAR + THREE_HR_SUFFIX
+        dates_3_hr_files            = glob.glob(dates_3_hr_filepath_pattern)
 
         if ( dates_3_hr_files ) :
 
@@ -160,6 +163,7 @@ for station_id, station_nbr in zip(station_ids_list, station_nbrs_list) :
             labels_list.append(values_3_hr_label)
 
 
+
     # Step 4 : Create plots
 
     for var_name in var_names_list :
@@ -172,7 +176,7 @@ for station_id, station_nbr in zip(station_ids_list, station_nbrs_list) :
         for combo_nbr in range(0, nbr_of_combos) :
             station_data_ploting_list.append(station_data_list[combo_nbr][:, var_index])
 
-        plot_filename = PLOT_TYPE + STATION_NAMES_DELIMITER + station_nbr + STATION_NAMES_DELIMITER + station_id + STATION_NAMES_DELIMITER + var_name + STATION_NAMES_DELIMITER + MIN_NBR_YRS_DIRECTORY.replace(SLASH_BAR, NULL_CHAR) + PNG_SUFFIX
-        plot_pathname = PLOT_DIRECTORY + SLASH_BAR + plot_filename
+        plot_filename = PLOT_TYPE + STATION_NAMES_DELIMITER + station_nbr + STATION_NAMES_DELIMITER + station_id + STATION_NAMES_DELIMITER + var_name + STATION_NAMES_DELIMITER + INPUT_DIRECTORY_2.replace(SLASH_BAR, NULL_CHAR) + PNG_SUFFIX
+        plot_pathname = OUTPUT_DIRECTORY + SLASH_BAR + plot_filename
 
         mtsp.Make_time_series_plot(station_dates_list, station_data_ploting_list, labels_list, var_name, plot_pathname)
