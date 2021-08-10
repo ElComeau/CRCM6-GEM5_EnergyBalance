@@ -163,7 +163,7 @@ for sampling_percentage in SAMPLING_PERCENTAGES :
 
             for variable_index in range(nbr_of_vars) :
 
-                data_values        = np.asarray( half_hr_data[:, variable_index] )
+                data_values        = np.asarray( three_hr_data[:, variable_index] )
                 mean_value_of_data = cs.Calculate_stats(TYPE_OF_STAT, data_values)
 
                 mean_values_of_data.append( round(mean_value_of_data[0], ROUNDING_POSITION) )
